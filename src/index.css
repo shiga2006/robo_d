@@ -1,0 +1,288 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 40% 98%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 174 72% 40%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 20% 45%;
+
+    --accent: 174 72% 40%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 222 47% 6%;
+
+    --success: 142 71% 40%;
+    --success-foreground: 0 0% 100%;
+
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 174 72% 40%;
+
+    --radius: 0.75rem;
+
+    /* Custom industrial tokens - Light */
+    --glow-primary: 0 0 20px hsl(174 72% 40% / 0.2);
+    --glow-success: 0 0 15px hsl(142 71% 40% / 0.3);
+    --glow-warning: 0 0 15px hsl(38 92% 50% / 0.3);
+    --glow-danger: 0 0 15px hsl(0 72% 51% / 0.3);
+    
+    --gradient-industrial: linear-gradient(135deg, hsl(210 40% 98%) 0%, hsl(210 40% 96%) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%) 0%, hsl(210 40% 98%) 100%);
+    --gradient-glow: linear-gradient(180deg, hsl(174 72% 40% / 0.1) 0%, transparent 100%);
+
+    --sidebar-background: 210 40% 98%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 174 72% 40%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 40% 96%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 214 32% 91%;
+    --sidebar-ring: 174 72% 40%;
+  }
+
+  .dark {
+    --background: 222 47% 6%;
+    --foreground: 210 40% 98%;
+
+    --card: 222 47% 8%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222 47% 10%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 174 72% 46%;
+    --primary-foreground: 222 47% 6%;
+
+    --secondary: 222 30% 14%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 222 30% 12%;
+    --muted-foreground: 215 20% 55%;
+
+    --accent: 174 72% 46%;
+    --accent-foreground: 222 47% 6%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 210 40% 98%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 222 47% 6%;
+
+    --success: 142 71% 45%;
+    --success-foreground: 222 47% 6%;
+
+    --border: 222 30% 18%;
+    --input: 222 30% 18%;
+    --ring: 174 72% 46%;
+
+    /* Custom industrial tokens - Dark */
+    --glow-primary: 0 0 20px hsl(174 72% 46% / 0.3);
+    --glow-success: 0 0 15px hsl(142 71% 45% / 0.4);
+    --glow-warning: 0 0 15px hsl(38 92% 50% / 0.4);
+    --glow-danger: 0 0 15px hsl(0 72% 51% / 0.4);
+    
+    --gradient-industrial: linear-gradient(135deg, hsl(222 47% 8%) 0%, hsl(222 47% 12%) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(222 30% 12%) 0%, hsl(222 47% 8%) 100%);
+    --gradient-glow: linear-gradient(180deg, hsl(174 72% 46% / 0.1) 0%, transparent 100%);
+
+    --sidebar-background: 222 47% 7%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 174 72% 46%;
+    --sidebar-primary-foreground: 222 47% 6%;
+    --sidebar-accent: 222 30% 14%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 222 30% 18%;
+    --sidebar-ring: 174 72% 46%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .font-mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+@layer components {
+  .card-industrial {
+    @apply bg-card border border-border rounded-lg;
+    background: var(--gradient-card);
+  }
+
+  .card-robot {
+    @apply card-industrial transition-all duration-300;
+  }
+
+  .card-robot:hover {
+    @apply border-primary/50;
+    box-shadow: var(--glow-primary);
+  }
+
+  .card-robot-alert {
+    @apply border-destructive;
+    box-shadow: var(--glow-danger);
+    animation: pulse-danger 2s infinite;
+  }
+
+  .status-dot {
+    @apply w-3 h-3 rounded-full;
+  }
+
+  .status-dot-safe {
+    @apply bg-success;
+    box-shadow: var(--glow-success);
+  }
+
+  .status-dot-warning {
+    @apply bg-warning;
+    box-shadow: var(--glow-warning);
+  }
+
+  .status-dot-danger {
+    @apply bg-destructive;
+    box-shadow: var(--glow-danger);
+  }
+
+  .glow-text-primary {
+    text-shadow: 0 0 10px hsl(174 72% 46% / 0.5);
+  }
+
+  .glow-text-success {
+    text-shadow: 0 0 10px hsl(142 71% 45% / 0.5);
+  }
+
+  .factory-map {
+    @apply bg-secondary/50 border border-border rounded-lg relative overflow-hidden;
+    background-image: 
+      linear-gradient(hsl(222 30% 18% / 0.5) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(222 30% 18% / 0.5) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  .robot-marker {
+    @apply absolute w-6 h-6 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300;
+    transform: translate(-50%, -50%);
+  }
+
+  .robot-marker:hover {
+    @apply scale-125;
+  }
+
+  .robot-marker-active {
+    @apply bg-success;
+    box-shadow: var(--glow-success);
+  }
+
+  .robot-marker-inactive {
+    @apply bg-muted-foreground/50;
+  }
+
+  .robot-marker-warning {
+    @apply bg-warning;
+    box-shadow: var(--glow-warning);
+    animation: pulse-warning 2s infinite;
+  }
+
+  .navbar-stat {
+    @apply flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary/50 border border-border;
+  }
+
+  .filter-button {
+    @apply w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all duration-200;
+  }
+
+  .filter-button:hover {
+    @apply bg-secondary;
+  }
+
+  .filter-button-active {
+    @apply bg-primary/10 border border-primary/30 text-primary;
+  }
+
+  .alert-banner {
+    @apply flex items-center gap-3 px-4 py-3 rounded-lg bg-destructive/10 border border-destructive/30;
+    animation: slide-in 0.3s ease-out;
+  }
+
+  .badge-industrial {
+    @apply px-2 py-1 rounded text-xs font-medium font-mono;
+  }
+
+  .badge-on {
+    @apply bg-success/20 text-success border border-success/30;
+  }
+
+  .badge-off {
+    @apply bg-muted text-muted-foreground border border-border;
+  }
+}
+
+@layer utilities {
+  @keyframes pulse-danger {
+    0%, 100% {
+      box-shadow: 0 0 15px hsl(0 72% 51% / 0.4);
+    }
+    50% {
+      box-shadow: 0 0 25px hsl(0 72% 51% / 0.6);
+    }
+  }
+
+  @keyframes pulse-warning {
+    0%, 100% {
+      box-shadow: 0 0 10px hsl(38 92% 50% / 0.4);
+    }
+    50% {
+      box-shadow: 0 0 18px hsl(38 92% 50% / 0.6);
+    }
+  }
+
+  @keyframes slide-in {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  .animate-blink {
+    animation: blink 1s ease-in-out infinite;
+  }
+}
