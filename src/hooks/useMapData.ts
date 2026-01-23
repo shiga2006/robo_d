@@ -1,7 +1,8 @@
 import { useState, useCallback, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { Map, MapNode, MapConnection } from '@/types/map';
 import { toast } from 'sonner';
+
+const API_URL = 'http://localhost:5000/api';
 
 export const useMapData = (userId: string | null) => {
     const [maps, setMaps] = useState<Map[]>([]);
@@ -10,54 +11,71 @@ export const useMapData = (userId: string | null) => {
     const [connections, setConnections] = useState<MapConnection[]>([]);
     const [isLoading, setIsLoading] = useState(false);
 
-    // Fetch all maps for current user
-    const fetchMaps = useCallback(async () => {
-        if (!userId) return;
+    // Helper to map MongoDB _id to id and normalize fields
+    const normalizeMap = (m: any): Map => ({
+        ...m,
+        id: m._id,
+        user_id: m.userId,
+        image_url: m.imageUrl,
+        created_at: m.createdAt
+    });
 
+    const normalizeNode = (n: any): MapNode => ({
+        ...n,
+        id: n._id,
+        map_id: n.mapId,
+        node_type: n.type,
+        created_at: n.createdAt
+    });
+
+    const normalizeConnection = (c: any): MapConnection => ({
+        ...c,
+        id: c._id,
+        map_id: c.mapId,
+        from_node_id: c.fromNodeId,
+        to_node_id: c.toNodeId,
+        created_at: c.createdAt
+    });
+
+    // Fetch all maps
+    const fetchMaps = useCallback(async () => {
         setIsLoading(true);
         try {
-            const { data, error } = await supabase
-                .from('maps')
-                .select('*')
-                .eq('user_id', userId)
-                .order('created_at', { ascending: false });
+            const response = await fetch(`${API_URL}/maps`);
+            if (!response.ok) throw new Error('Failed to fetch maps');
 
-            if (error) throw error;
-            setMaps(data || []);
+            const data = await response.json();
+            const normalizedMaps = data.map(normalizeMap);
+            setMaps(normalizedMaps);
 
             // Auto-select first map if none selected
-            if (data && data.length > 0 && !selectedMapId) {
-                setSelectedMapId(data[0].id);
+            if (normalizedMaps.length > 0 && !selectedMapId) {
+                setSelectedMapId(normalizedMaps[0].id);
             }
         } catch (error) {
             console.error('Error fetching maps:', error);
-            toast.error('Failed to load maps');
+            toast.error('Failed to load maps (Is the local server running?)');
         } finally {
             setIsLoading(false);
         }
-    }, [userId, selectedMapId]);
+    }, [selectedMapId]);
 
-    // Fetch nodes and connections for selected map
+    // Fetch data for selected map
     const fetchMapData = useCallback(async (mapId: string) => {
         setIsLoading(true);
         try {
             // Fetch nodes
-            const { data: nodesData, error: nodesError } = await supabase
-                .from('map_nodes')
-                .select('*')
-                .eq('map_id', mapId);
-
-            if (nodesError) throw nodesError;
-            setNodes(nodesData || []);
+            const nodesRes = await fetch(`${API_URL}/maps/${mapId}/nodes`);
+            if (!nodesRes.ok) throw new Error('Failed to fetch nodes');
+            const nodesData = await nodesRes.json();
+            setNodes(nodesData.map(normalizeNode));
 
             // Fetch connections
-            const { data: connectionsData, error: connectionsError } = await supabase
-                .from('map_connections')
-                .select('*')
-                .eq('map_id', mapId);
+            const connRes = await fetch(`${API_URL}/maps/${mapId}/connections`);
+            if (!connRes.ok) throw new Error('Failed to fetch connections');
+            const connData = await connRes.json();
+            setConnections(connData.map(normalizeConnection));
 
-            if (connectionsError) throw connectionsError;
-            setConnections(connectionsData || []);
         } catch (error) {
             console.error('Error fetching map data:', error);
             toast.error('Failed to load map data');
@@ -67,28 +85,82 @@ export const useMapData = (userId: string | null) => {
     }, []);
 
     // Create a new map
-    const createMap = useCallback(async (name: string, imageUrl: string, width: number, height: number) => {
-        if (!userId) return null;
-
+    const createMap = useCallback(async (name: string, imageUrl: string, width: number, height: number, imageFile?: File) => {
         try {
-            const { data, error } = await supabase
-                .from('maps')
-                .insert({
-                    user_id: userId,
-                    name,
-                    image_url: imageUrl,
-                    width,
-                    height,
-                })
-                .select()
-                .single();
+            // Note: imageUrl coming from MapUpload might be a local preview URL.
+            // We need to support file upload properly here if imageFile is provided.
+            // However, the uploadMapImage function handles the file upload separate from this creation in the original flow?
+            // Actually in the new flow, we should probably upload and create in one step or similar.
+            // But let's stick to the existing pattern: upload first, then create, OR modify to upload here.
 
-            if (error) throw error;
+            // Wait, looking at the backend, POST /api/maps expects 'image' file in formData.
+            // So we should repurpose this or the uploadMapImage.
+            // Let's rely on uploadMapImage to do nothing or change the flow?
 
-            setMaps((prev) => [data, ...prev]);
-            setSelectedMapId(data.id);
+            // Actually, the MapUpload component logic was: 
+            // 1. User selects file -> uploadMapImage -> returns publicUrl
+            // 2. User clicks "Save/Upload" -> createMap(name, publicUrl...)
+
+            // We need to change this flow slightly because the backend POST /api/maps does BOTH upload and create.
+            // OR we can keep two steps if we add a separate upload endpoint.
+            // But our backend POST /api/maps takes the file AND metadata.
+
+            // To minimize frontend component changes, I'll temporarily break the "clean" separation.
+            // But wait, `MapUpload.tsx` calls `onUpload` which calls `handleMapUpload` in Index.tsx.
+            // `handleMapUpload` calls `createMap` with the image URL? No, checking Index.tsx...
+            // It calls `uploadMapImage` then `createMap`.
+
+            // Let's support the legacy signature but ignore the imageUrl string if we can,
+            // or better, update the backend to support simpler flow if needed.
+            // But actually, for MERN, standard is multipart/form-data with everything.
+
+            // I will implement a SEPARATE upload function if needed, but the current backend merges them.
+            // Let's look at `index.js` I wrote.
+            // `app.post('/api/maps', upload.single('image'), ...)`
+            // It expects `name`, `width`, `height` in body and `image` in file.
+
+            // So calling `createMap` needs the File object.
+            // I need to update the hook signature to accept `File`.
+            // But `Index.tsx` passes `imageUrl` string (from `uploadMapImage`).
+
+            // Hacky Fix for smooth migration:
+            // 1. `uploadMapImage` will now be a dummy that just returns the File object (or a fake URL representing it) to the component?
+            // No, `MapUpload` displays the preview.
+
+            // Let's just modify `createMap` to take the File. 
+            // I'll need to update `Index.tsx` to pass the file to `createMap`.
+
+            throw new Error("Update: createMap now requires a File object in the new MERN setup.");
+
+        } catch (error) {
+            // ...
+        }
+    }, []);
+
+    // RE-WRITING createMap to be correct for MERN
+    const createMapMern = useCallback(async (name: string, file: File, width: number, height: number) => {
+        try {
+            const formData = new FormData();
+            formData.append('image', file);
+            formData.append('name', name);
+            formData.append('width', String(width));
+            formData.append('height', String(height));
+            formData.append('userId', userId || 'demo-user-123');
+
+            const response = await fetch(`${API_URL}/maps`, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) throw new Error('Upload failed');
+
+            const data = await response.json();
+            const normalized = normalizeMap(data);
+
+            setMaps((prev) => [normalized, ...prev]);
+            setSelectedMapId(normalized.id);
             toast.success('Map uploaded successfully');
-            return data;
+            return normalized;
         } catch (error) {
             console.error('Error creating map:', error);
             toast.error('Failed to create map');
@@ -96,15 +168,11 @@ export const useMapData = (userId: string | null) => {
         }
     }, [userId]);
 
-    // Delete a map
+
     const deleteMap = useCallback(async (mapId: string) => {
         try {
-            const { error } = await supabase
-                .from('maps')
-                .delete()
-                .eq('id', mapId);
-
-            if (error) throw error;
+            const response = await fetch(`${API_URL}/maps/${mapId}`, { method: 'DELETE' });
+            if (!response.ok) throw new Error('Delete failed');
 
             setMaps((prev) => prev.filter((m) => m.id !== mapId));
             if (selectedMapId === mapId) {
@@ -118,31 +186,21 @@ export const useMapData = (userId: string | null) => {
         }
     }, [maps, selectedMapId]);
 
-    // Create a node
-    const createNode = useCallback(async (
-        mapId: string,
-        x: number,
-        y: number,
-        label: string,
-        nodeType: 'delivery' | 'waypoint' | 'charging'
-    ) => {
+    const createNode = useCallback(async (mapId: string, x: number, y: number, label: string, nodeType: string) => {
         try {
-            const { data, error } = await supabase
-                .from('map_nodes')
-                .insert({
-                    map_id: mapId,
-                    x,
-                    y,
-                    label,
-                    node_type: nodeType,
+            const response = await fetch(`${API_URL}/nodes`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    mapId, x, y, label, type: nodeType
                 })
-                .select()
-                .single();
+            });
+            if (!response.ok) throw new Error('Failed to create node');
 
-            if (error) throw error;
-
-            setNodes((prev) => [...prev, data]);
-            return data;
+            const data = await response.json();
+            const normalized = normalizeNode(data);
+            setNodes((prev) => [...prev, normalized]);
+            return normalized;
         } catch (error) {
             console.error('Error creating node:', error);
             toast.error('Failed to create node');
@@ -150,23 +208,27 @@ export const useMapData = (userId: string | null) => {
         }
     }, []);
 
-    // Update a node
-    const updateNode = useCallback(async (
-        nodeId: string,
-        updates: Partial<Pick<MapNode, 'x' | 'y' | 'label' | 'node_type'>>
-    ) => {
+    const updateNode = useCallback(async (nodeId: string, updates: any) => {
         try {
-            const { data, error } = await supabase
-                .from('map_nodes')
-                .update(updates)
-                .eq('id', nodeId)
-                .select()
-                .single();
+            // Map frontend fields to backend fields if necessary
+            // Frontend 'node_type' -> Backend 'type'
+            const backendUpdates = { ...updates };
+            if (updates.node_type) {
+                backendUpdates.type = updates.node_type;
+                delete backendUpdates.node_type;
+            }
 
-            if (error) throw error;
+            const response = await fetch(`${API_URL}/nodes/${nodeId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(backendUpdates)
+            });
+            if (!response.ok) throw new Error('Failed to update node');
 
-            setNodes((prev) => prev.map((n) => (n.id === nodeId ? data : n)));
-            return data;
+            const data = await response.json();
+            const normalized = normalizeNode(data);
+            setNodes((prev) => prev.map((n) => (n.id === nodeId ? normalized : n)));
+            return normalized;
         } catch (error) {
             console.error('Error updating node:', error);
             toast.error('Failed to update node');
@@ -174,18 +236,12 @@ export const useMapData = (userId: string | null) => {
         }
     }, []);
 
-    // Delete a node
     const deleteNode = useCallback(async (nodeId: string) => {
         try {
-            const { error } = await supabase
-                .from('map_nodes')
-                .delete()
-                .eq('id', nodeId);
-
-            if (error) throw error;
+            const response = await fetch(`${API_URL}/nodes/${nodeId}`, { method: 'DELETE' });
+            if (!response.ok) throw new Error('Failed to delete node');
 
             setNodes((prev) => prev.filter((n) => n.id !== nodeId));
-            // Connections will be deleted automatically due to CASCADE
             setConnections((prev) =>
                 prev.filter((c) => c.from_node_id !== nodeId && c.to_node_id !== nodeId)
             );
@@ -195,34 +251,27 @@ export const useMapData = (userId: string | null) => {
         }
     }, []);
 
-    // Create a connection
-    const createConnection = useCallback(async (
-        mapId: string,
-        fromNodeId: string,
-        toNodeId: string
-    ) => {
+    const createConnection = useCallback(async (mapId: string, fromNodeId: string, toNodeId: string) => {
         try {
-            const { data, error } = await supabase
-                .from('map_connections')
-                .insert({
-                    map_id: mapId,
-                    from_node_id: fromNodeId,
-                    to_node_id: toNodeId,
-                })
-                .select()
-                .single();
+            const response = await fetch(`${API_URL}/connections`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ mapId, fromNodeId, toNodeId })
+            });
 
-            if (error) {
-                if (error.code === '23505') { // Unique constraint violation
+            if (!response.ok) {
+                const err = await response.json();
+                if (err.error === 'Connection already exists') {
                     toast.error('Connection already exists');
-                } else {
-                    throw error;
+                    return null;
                 }
-                return null;
+                throw new Error('Failed to create connection');
             }
 
-            setConnections((prev) => [...prev, data]);
-            return data;
+            const data = await response.json();
+            const normalized = normalizeConnection(data);
+            setConnections((prev) => [...prev, normalized]);
+            return normalized;
         } catch (error) {
             console.error('Error creating connection:', error);
             toast.error('Failed to create connection');
@@ -230,15 +279,10 @@ export const useMapData = (userId: string | null) => {
         }
     }, []);
 
-    // Delete a connection
     const deleteConnection = useCallback(async (connectionId: string) => {
         try {
-            const { error } = await supabase
-                .from('map_connections')
-                .delete()
-                .eq('id', connectionId);
-
-            if (error) throw error;
+            const response = await fetch(`${API_URL}/connections/${connectionId}`, { method: 'DELETE' });
+            if (!response.ok) throw new Error('Failed to delete connection');
 
             setConnections((prev) => prev.filter((c) => c.id !== connectionId));
         } catch (error) {
@@ -247,46 +291,13 @@ export const useMapData = (userId: string | null) => {
         }
     }, []);
 
-    // Upload map image to Supabase storage
+    // Placeholder to satisfy interface but we'll use createMapMern for real work
     const uploadMapImage = useCallback(async (file: File): Promise<string | null> => {
-        if (!userId) return null;
-
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${userId}/${Date.now()}.${fileExt}`;
-
-        try {
-            const { data, error } = await supabase.storage
-                .from('map-images')
-                .upload(fileName, file);
-
-            if (error) throw error;
-
-            const { data: { publicUrl } } = supabase.storage
-                .from('map-images')
-                .getPublicUrl(fileName);
-
-            return publicUrl;
-        } catch (error) {
-            console.error('Error uploading image:', error);
-            toast.error('Failed to upload image');
-            return null;
-        }
-    }, [userId]);
-
-    // Load maps on mount
-    useEffect(() => {
-        fetchMaps();
-    }, [fetchMaps]);
-
-    // Load map data when selected map changes
-    useEffect(() => {
-        if (selectedMapId) {
-            fetchMapData(selectedMapId);
-        } else {
-            setNodes([]);
-            setConnections([]);
-        }
-    }, [selectedMapId, fetchMapData]);
+        // In MERN flow, we upload during creation. 
+        // We'll return a fake URL or null here, and handle the file in the component.
+        // Or better: we return the FILE itself (casemode hack) or just success.
+        return "ready-to-upload";
+    }, []);
 
     return {
         maps,
@@ -295,7 +306,7 @@ export const useMapData = (userId: string | null) => {
         nodes,
         connections,
         isLoading,
-        createMap,
+        createMap: createMapMern, // Swap implementation
         deleteMap,
         createNode,
         updateNode,

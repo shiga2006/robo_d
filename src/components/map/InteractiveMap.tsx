@@ -351,8 +351,8 @@ const InteractiveMap = ({
                                         key={type}
                                         onClick={() => setSelectedNodeType(type)}
                                         className={`px-3 py-1 rounded text-xs font-medium transition-colors ${selectedNodeType === type
-                                                ? 'bg-primary text-primary-foreground'
-                                                : 'text-muted-foreground hover:text-foreground'
+                                            ? 'bg-primary text-primary-foreground'
+                                            : 'text-muted-foreground hover:text-foreground'
                                             }`}
                                     >
                                         {type.charAt(0).toUpperCase() + type.slice(1)}

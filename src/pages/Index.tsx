@@ -116,13 +116,12 @@ const Index = () => {
   const handleMapUpload = async (file: File, name: string, width: number, height: number) => {
     setIsUploading(true);
     try {
-      const imageUrl = await uploadMapImage(file);
-      if (imageUrl) {
-        await createMap(name, imageUrl, width, height);
-        setShowUploadDialog(false);
-      }
+      // For MERN stack: Pass file directly to createMap
+      await createMap(name, file, width, height);
+      setShowUploadDialog(false);
     } catch (error) {
       console.error('Upload failed:', error);
+      toast.error('Upload failed');
     } finally {
       setIsUploading(false);
     }
