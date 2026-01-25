@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { Map, MapNode, MapConnection } from '@/types/map';
 import { toast } from 'sonner';
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = 'http://127.0.0.1:5000/api';
 
 export const useMapData = (userId: string | null) => {
     const [maps, setMaps] = useState<Map[]>([]);
@@ -12,30 +12,42 @@ export const useMapData = (userId: string | null) => {
     const [isLoading, setIsLoading] = useState(false);
 
     // Helper to map MongoDB _id to id and normalize fields
-    const normalizeMap = (m: any): Map => ({
-        ...m,
-        id: m._id,
-        user_id: m.userId,
-        image_url: m.imageUrl,
-        created_at: m.createdAt
-    });
+    const normalizeMap = (m: any): Map => {
+        const id = m._id || m.id;
+        return {
+            ...m,
+            id: id,
+            _id: id,
+            user_id: m.userId || m.user_id,
+            image_url: m.imageUrl || m.image_url,
+            created_at: m.createdAt || m.created_at
+        };
+    };
 
-    const normalizeNode = (n: any): MapNode => ({
-        ...n,
-        id: n._id,
-        map_id: n.mapId,
-        node_type: n.type,
-        created_at: n.createdAt
-    });
+    const normalizeNode = (n: any): MapNode => {
+        const id = n._id || n.id;
+        return {
+            ...n,
+            id: id,
+            _id: id,
+            map_id: n.mapId || n.map_id,
+            node_type: n.type || n.node_type,
+            created_at: n.createdAt || n.created_at
+        };
+    };
 
-    const normalizeConnection = (c: any): MapConnection => ({
-        ...c,
-        id: c._id,
-        map_id: c.mapId,
-        from_node_id: c.fromNodeId,
-        to_node_id: c.toNodeId,
-        created_at: c.createdAt
-    });
+    const normalizeConnection = (c: any): MapConnection => {
+        const id = c._id || c.id;
+        return {
+            ...c,
+            id: id,
+            _id: id,
+            map_id: c.mapId || c.map_id,
+            from_node_id: c.fromNodeId || c.from_node_id,
+            to_node_id: c.toNodeId || c.to_node_id,
+            created_at: c.createdAt || c.created_at
+        };
+    };
 
     // Fetch all maps
     const fetchMaps = useCallback(async () => {
@@ -298,6 +310,18 @@ export const useMapData = (userId: string | null) => {
         // Or better: we return the FILE itself (casemode hack) or just success.
         return "ready-to-upload";
     }, []);
+
+    // Initial fetch
+    useEffect(() => {
+        fetchMaps();
+    }, [fetchMaps]);
+
+    // Fetch data when map is selected
+    useEffect(() => {
+        if (selectedMapId) {
+            fetchMapData(selectedMapId);
+        }
+    }, [selectedMapId, fetchMapData]);
 
     return {
         maps,

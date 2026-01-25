@@ -1,73 +1,81 @@
-# Welcome to your Lovable project
+# RoboFleet Control - Industrial Navigation Platform
 
-## Project info
+An industrial-grade robot monitoring and navigation platform built with the MERN stack. This application allows operators to upload floor plans, mark delivery points, and manage robot paths in real-time.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## Tech Stack
 
-## How can I edit this code?
+- **Frontend**: React, Vite, TypeScript, Tailwind CSS, shadcn/ui
+- **Backend**: Node.js, Express
+- **Database**: MongoDB (Mongoose)
+- **Deployment**: Local Server (Express) + Vite Frontend
 
-There are several ways of editing your application.
+## Prerequisites
 
-**Use Lovable**
+Before running the project locally, ensure you have:
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+- [Node.js](https://nodejs.org/) (v18 or later)
+- [MongoDB](https://www.mongodb.com/try/download/community) installed and running locally
+- npm or yarn
 
-Changes made via Lovable will be committed automatically to this repo.
+## Getting Started
 
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+### 1. Clone the repository
+```bash
+git clone <repository-url>
+cd robo_d
 ```
 
-**Edit a file directly in GitHub**
+### 2. Setup Environment Variables
+Create a `.env` file in the root directory:
+```env
+MONGODB_URI="mongodb://127.0.0.1:27017/robo_d"
+```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### 3. Install Dependencies
 
-**Use GitHub Codespaces**
+**Frontend:**
+```bash
+npm install
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+**Backend:**
+```bash
+cd server
+npm install
+cd ..
+```
 
-## What technologies are used for this project?
+## Running the Application
 
-This project is built with:
+You need to run both the backend and frontend servers simultaneously.
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+### 1. Start the Backend Server
+In a new terminal:
+```bash
+cd server
+npm run dev
+```
+The server will start on `http://127.0.0.1:5000`.
 
-## How can I deploy this project?
+### 2. Start the Frontend Application
+In another terminal:
+```bash
+npm run dev
+```
+The application will be accessible at `http://localhost:8080`.
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+## Project Structure
 
-## Can I connect a custom domain to my Lovable project?
+- `/src`: React frontend components, hooks, and pages.
+- `/server`: Express backend application.
+  - `/server/models`: Mongoose schemas for Maps, Nodes, and Connections.
+  - `/server/uploads`: Local storage for uploaded map images.
+- `/public`: Static assets.
 
-Yes, you can!
+## Features
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+- **Interactive Maps**: Upload and manage multiple facility floor plans.
+- **Node Management**: Mark delivery points, waypoints, and charging stations.
+- **Pathfinding**: Create and persist connections between nodes.
+- **Robot Monitoring**: Real-time status tracking for the robot fleet.
+- **MERN Architecture**: Full-stack implementation with MongoDB persistence.

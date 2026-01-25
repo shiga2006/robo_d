@@ -12,7 +12,6 @@ import NodePanel from '@/components/map/NodePanel';
 import { robots, getLowBatteryRobots, getActiveRobots, getMaintenanceRobots, Robot } from '@/data/robots';
 import { useMapData } from '@/hooks/useMapData';
 import { NodeType } from '@/types/map';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Zap } from 'lucide-react';
 import { toast } from 'sonner';
@@ -90,27 +89,8 @@ const Index = () => {
     setModalRobot(null);
   };
 
-  const [isApiLoading, setIsApiLoading] = useState(false);
-
   const handleApiCall = async () => {
-    setIsApiLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('dummy-api');
-
-      if (error) {
-        console.error('API Error:', error);
-        toast.error('API call failed: ' + error.message);
-        return;
-      }
-
-      console.log('API Response:', data);
-      toast.success(`API Success! Credits: ${data.data.credits}, Robots Online: ${data.data.robotsOnline}`);
-    } catch (err) {
-      console.error('Unexpected error:', err);
-      toast.error('Unexpected error occurred');
-    } finally {
-      setIsApiLoading(false);
-    }
+    toast.info('API integration moved to MongoDB backend.');
   };
 
   const handleMapUpload = async (file: File, name: string, width: number, height: number) => {
@@ -222,11 +202,10 @@ const Index = () => {
                   <div className="flex items-center gap-4">
                     <Button
                       onClick={handleApiCall}
-                      disabled={isApiLoading}
                       className="bg-primary hover:bg-primary/90 text-primary-foreground"
                     >
                       <Zap className="w-4 h-4 mr-2" />
-                      {isApiLoading ? 'Calling API...' : 'Test API'}
+                      Test API
                     </Button>
                     <span className="text-sm text-muted-foreground font-mono">
                       {filteredRobots.length} robots
