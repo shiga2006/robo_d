@@ -1,4 +1,4 @@
-# RoboFleet Control - Industrial Navigation Platform
+# Navigo- Industrial Navigation Platform
 
 An industrial-grade robot monitoring and navigation platform built with the MERN stack. This application allows operators to upload floor plans, mark delivery points, and manage robot paths in real-time.
 
