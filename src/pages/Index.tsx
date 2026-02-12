@@ -11,6 +11,7 @@ import MapUpload from '@/components/map/MapUpload';
 import NodePanel from '@/components/map/NodePanel';
 import { robots, getLowBatteryRobots, getActiveRobots, getMaintenanceRobots, Robot } from '@/data/robots';
 import { useMapData } from '@/hooks/useMapData';
+import { useAuth } from '@/contexts/AuthContext';
 import { NodeType } from '@/types/map';
 import { Button } from '@/components/ui/button';
 import { Zap } from 'lucide-react';
@@ -18,6 +19,9 @@ import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 const Index = () => {
+  const { user: authUser } = useAuth();
+  const userId = authUser?.id || 'demo-user-123';
+
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [selectedRobotId, setSelectedRobotId] = useState<string | null>(null);
   const [modalRobot, setModalRobot] = useState<Robot | null>(null);
@@ -25,10 +29,6 @@ const Index = () => {
   const [isBannerVisible, setIsBannerVisible] = useState(true);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-
-  // Get user ID from Supabase session (for demo, using a mock user ID)
-  // In production, you would get this from authentication
-  const [userId] = useState<string>('demo-user-123');
 
   const {
     maps,
@@ -43,7 +43,6 @@ const Index = () => {
     deleteNode,
     createConnection,
     deleteConnection,
-    uploadMapImage,
   } = useMapData(userId);
 
   const lowBatteryRobots = useMemo(() => getLowBatteryRobots(), []);
@@ -87,10 +86,6 @@ const Index = () => {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setModalRobot(null);
-  };
-
-  const handleApiCall = async () => {
-    toast.info('API integration moved to MongoDB backend.');
   };
 
   const handleMapUpload = async (file: File, name: string, width: number, height: number) => {
@@ -200,13 +195,6 @@ const Index = () => {
                           'Needs Maintenance'}
                   </h2>
                   <div className="flex items-center gap-4">
-                    <Button
-                      onClick={handleApiCall}
-                      className="bg-primary hover:bg-primary/90 text-primary-foreground"
-                    >
-                      <Zap className="w-4 h-4 mr-2" />
-                      Test API
-                    </Button>
                     <span className="text-sm text-muted-foreground font-mono">
                       {filteredRobots.length} robots
                     </span>

@@ -1,15 +1,28 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Map, MapNode, MapConnection } from '@/types/map';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 
 const API_URL = 'http://127.0.0.1:5000/api';
 
 export const useMapData = (userId: string | null) => {
+    const { token } = useAuth();
     const [maps, setMaps] = useState<Map[]>([]);
     const [selectedMapId, setSelectedMapId] = useState<string | null>(null);
     const [nodes, setNodes] = useState<MapNode[]>([]);
     const [connections, setConnections] = useState<MapConnection[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+
+    const getHeaders = (isMultipart = false) => {
+        const headers: any = {};
+        if (!isMultipart) {
+            headers['Content-Type'] = 'application/json';
+        }
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+        return headers;
+    };
 
     // Helper to map MongoDB _id to id and normalize fields
     const normalizeMap = (m: any): Map => {
@@ -53,7 +66,10 @@ export const useMapData = (userId: string | null) => {
     const fetchMaps = useCallback(async () => {
         setIsLoading(true);
         try {
-            const response = await fetch(`${API_URL}/maps`);
+            const url = userId ? `${API_URL}/maps?userId=${userId}` : `${API_URL}/maps`;
+            const response = await fetch(url, {
+                headers: getHeaders()
+            });
             if (!response.ok) throw new Error('Failed to fetch maps');
 
             const data = await response.json();
@@ -66,24 +82,25 @@ export const useMapData = (userId: string | null) => {
             }
         } catch (error) {
             console.error('Error fetching maps:', error);
-            toast.error('Failed to load maps (Is the local server running?)');
+            // toast.error('Failed to load maps (Is the local server running?)');
         } finally {
             setIsLoading(false);
         }
-    }, [selectedMapId]);
+    }, [userId, selectedMapId, token]);
 
     // Fetch data for selected map
     const fetchMapData = useCallback(async (mapId: string) => {
         setIsLoading(true);
         try {
+            const headers = getHeaders();
             // Fetch nodes
-            const nodesRes = await fetch(`${API_URL}/maps/${mapId}/nodes`);
+            const nodesRes = await fetch(`${API_URL}/maps/${mapId}/nodes`, { headers });
             if (!nodesRes.ok) throw new Error('Failed to fetch nodes');
             const nodesData = await nodesRes.json();
             setNodes(nodesData.map(normalizeNode));
 
             // Fetch connections
-            const connRes = await fetch(`${API_URL}/maps/${mapId}/connections`);
+            const connRes = await fetch(`${API_URL}/maps/${mapId}/connections`, { headers });
             if (!connRes.ok) throw new Error('Failed to fetch connections');
             const connData = await connRes.json();
             setConnections(connData.map(normalizeConnection));
@@ -94,63 +111,11 @@ export const useMapData = (userId: string | null) => {
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [token]);
 
     // Create a new map
-    const createMap = useCallback(async (name: string, imageUrl: string, width: number, height: number, imageFile?: File) => {
-        try {
-            // Note: imageUrl coming from MapUpload might be a local preview URL.
-            // We need to support file upload properly here if imageFile is provided.
-            // However, the uploadMapImage function handles the file upload separate from this creation in the original flow?
-            // Actually in the new flow, we should probably upload and create in one step or similar.
-            // But let's stick to the existing pattern: upload first, then create, OR modify to upload here.
-
-            // Wait, looking at the backend, POST /api/maps expects 'image' file in formData.
-            // So we should repurpose this or the uploadMapImage.
-            // Let's rely on uploadMapImage to do nothing or change the flow?
-
-            // Actually, the MapUpload component logic was: 
-            // 1. User selects file -> uploadMapImage -> returns publicUrl
-            // 2. User clicks "Save/Upload" -> createMap(name, publicUrl...)
-
-            // We need to change this flow slightly because the backend POST /api/maps does BOTH upload and create.
-            // OR we can keep two steps if we add a separate upload endpoint.
-            // But our backend POST /api/maps takes the file AND metadata.
-
-            // To minimize frontend component changes, I'll temporarily break the "clean" separation.
-            // But wait, `MapUpload.tsx` calls `onUpload` which calls `handleMapUpload` in Index.tsx.
-            // `handleMapUpload` calls `createMap` with the image URL? No, checking Index.tsx...
-            // It calls `uploadMapImage` then `createMap`.
-
-            // Let's support the legacy signature but ignore the imageUrl string if we can,
-            // or better, update the backend to support simpler flow if needed.
-            // But actually, for MERN, standard is multipart/form-data with everything.
-
-            // I will implement a SEPARATE upload function if needed, but the current backend merges them.
-            // Let's look at `index.js` I wrote.
-            // `app.post('/api/maps', upload.single('image'), ...)`
-            // It expects `name`, `width`, `height` in body and `image` in file.
-
-            // So calling `createMap` needs the File object.
-            // I need to update the hook signature to accept `File`.
-            // But `Index.tsx` passes `imageUrl` string (from `uploadMapImage`).
-
-            // Hacky Fix for smooth migration:
-            // 1. `uploadMapImage` will now be a dummy that just returns the File object (or a fake URL representing it) to the component?
-            // No, `MapUpload` displays the preview.
-
-            // Let's just modify `createMap` to take the File. 
-            // I'll need to update `Index.tsx` to pass the file to `createMap`.
-
-            throw new Error("Update: createMap now requires a File object in the new MERN setup.");
-
-        } catch (error) {
-            // ...
-        }
-    }, []);
-
-    // RE-WRITING createMap to be correct for MERN
-    const createMapMern = useCallback(async (name: string, file: File, width: number, height: number) => {
+    const createMap = useCallback(async (name: string, file: File, width: number, height: number) => {
+        setIsLoading(true);
         try {
             const formData = new FormData();
             formData.append('image', file);
@@ -161,10 +126,14 @@ export const useMapData = (userId: string | null) => {
 
             const response = await fetch(`${API_URL}/maps`, {
                 method: 'POST',
+                headers: getHeaders(true),
                 body: formData
             });
 
-            if (!response.ok) throw new Error('Upload failed');
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.error || 'Upload failed');
+            }
 
             const data = await response.json();
             const normalized = normalizeMap(data);
@@ -173,10 +142,12 @@ export const useMapData = (userId: string | null) => {
             setSelectedMapId(normalized.id);
             toast.success('Map uploaded successfully');
             return normalized;
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error creating map:', error);
-            toast.error('Failed to create map');
+            toast.error(error.message || 'Failed to create map');
             return null;
+        } finally {
+            setIsLoading(false);
         }
     }, [userId]);
 
@@ -303,14 +274,6 @@ export const useMapData = (userId: string | null) => {
         }
     }, []);
 
-    // Placeholder to satisfy interface but we'll use createMapMern for real work
-    const uploadMapImage = useCallback(async (file: File): Promise<string | null> => {
-        // In MERN flow, we upload during creation. 
-        // We'll return a fake URL or null here, and handle the file in the component.
-        // Or better: we return the FILE itself (casemode hack) or just success.
-        return "ready-to-upload";
-    }, []);
-
     // Initial fetch
     useEffect(() => {
         fetchMaps();
@@ -330,14 +293,13 @@ export const useMapData = (userId: string | null) => {
         nodes,
         connections,
         isLoading,
-        createMap: createMapMern, // Swap implementation
+        createMap,
         deleteMap,
         createNode,
         updateNode,
         deleteNode,
         createConnection,
         deleteConnection,
-        uploadMapImage,
         refreshMaps: fetchMaps,
     };
 };

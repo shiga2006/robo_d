@@ -28,7 +28,7 @@ const Navbar = ({ alertCount }: NavbarProps) => {
         </div>
         <div>
           <h1 className="text-lg font-semibold text-foreground glow-text-primary">
-            RoboFleet Control
+            Navigo
           </h1>
           <p className="text-xs text-muted-foreground">Industrial Monitoring System</p>
         </div>
@@ -66,7 +66,7 @@ const Navbar = ({ alertCount }: NavbarProps) => {
         {user && (
           <div className="flex items-center gap-3 ml-2 pl-4 border-l border-border">
             <span className="text-sm text-muted-foreground">
-              Welcome, <span className="font-semibold text-foreground">{user}</span>
+              Welcome, <span className="font-semibold text-foreground">{user.username}</span>
             </span>
             <Button
               variant="outline"

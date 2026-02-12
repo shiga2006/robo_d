@@ -14,7 +14,7 @@ export interface Robot {
 export const robots: Robot[] = [
   {
     id: 'AGV-001',
-    name: 'Atlas Prime',
+    name: 'Navigo bot 1',
     status: 'ON',
     battery: 87,
     safetyStatus: 'safe',
@@ -26,7 +26,7 @@ export const robots: Robot[] = [
   },
   {
     id: 'AGV-002',
-    name: 'Nexus Hauler',
+    name: 'Navigo bot 2',
     status: 'ON',
     battery: 18,
     safetyStatus: 'warning',
@@ -38,7 +38,7 @@ export const robots: Robot[] = [
   },
   {
     id: 'AGV-003',
-    name: 'Titan Carrier',
+    name: 'Navigo bot 3',
     status: 'OFF',
     battery: 45,
     safetyStatus: 'safe',
@@ -50,7 +50,7 @@ export const robots: Robot[] = [
   },
   {
     id: 'AGV-004',
-    name: 'Swift Runner',
+    name: 'Navigo bot 4',
     status: 'ON',
     battery: 62,
     safetyStatus: 'safe',
@@ -62,7 +62,7 @@ export const robots: Robot[] = [
   },
   {
     id: 'AGV-005',
-    name: 'Iron Sentinel',
+    name: 'Navigo bot 5',
     status: 'ON',
     battery: 12,
     safetyStatus: 'danger',
